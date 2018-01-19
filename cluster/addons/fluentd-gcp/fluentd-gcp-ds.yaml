@@ -1,9 +1,9 @@
 apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
-  name: fluentd-gcp-v2.0.14
-  namespace: kube-system
+  name: fluentd-souvla-v2.0.14
   labels:
+    app: souvla
     k8s-app: fluentd-gcp
     kubernetes.io/cluster-service: "true"
     addonmanager.kubernetes.io/mode: Reconcile
@@ -14,6 +14,7 @@ spec:
   template:
     metadata:
       labels:
+        app: souvla
         k8s-app: fluentd-gcp
         kubernetes.io/cluster-service: "true"
         version: v2.0.14
@@ -23,7 +24,7 @@ spec:
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
-      serviceAccountName: fluentd-gcp
+      # serviceAccountName: fluentd-gcp
       dnsPolicy: Default
       containers:
       - name: fluentd-gcp
@@ -80,26 +81,6 @@ spec:
               then
                 exit 1;
               fi;
-      # BEGIN_PROMETHEUS_TO_SD
-      - name: prometheus-to-sd-exporter
-        image: gcr.io/google-containers/prometheus-to-sd:v0.2.2
-        command:
-          - /monitor
-          - --stackdriver-prefix={{ prometheus_to_sd_prefix }}/addons
-          - --api-override={{ prometheus_to_sd_endpoint }}
-          - --source=fluentd:http://localhost:31337?whitelisted=stackdriver_successful_requests_count,stackdriver_failed_requests_count,stackdriver_ingested_entries_count,stackdriver_dropped_entries_count
-          - --pod-id=$(POD_NAME)
-          - --namespace-id=$(POD_NAMESPACE)
-        env:
-          - name: POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
-          - name: POD_NAMESPACE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
-      # END_PROMETHEUS_TO_SD
       nodeSelector:
         beta.kubernetes.io/fluentd-ds-ready: "true"
       tolerations:
@@ -122,4 +103,4 @@ spec:
           path: /usr/lib64
       - name: config-volume
         configMap:
-          name: fluentd-gcp-config-v1.2.3
+          name: fluentd-souvla-config-v1.2.3

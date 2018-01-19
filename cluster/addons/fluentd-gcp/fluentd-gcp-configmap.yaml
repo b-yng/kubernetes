@@ -65,7 +65,10 @@ data:
 
     <filter reform.**>
       type parser
-      format /^(?<severity>\w)(?<time>\d{4} [^\s]*)\s+(?<pid>\d+)\s+(?<source>[^ \]]+)\] (?<log>.*)/
+      format /^\S+ \S+\s+(?<severity>[^\s]+)\s+---\s+(?<log>.*)/
+      # format multiline
+      # format_firstline /\d{4}-\d{1,2}-\d{1,2}/
+      # format1 /^(?<time>\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{1,2}:\d{1,2}.\d{3})\s+(?<severity>[^\s]+)\s+---\s+(?<log>.*)/
       reserve_data true
       suppress_parse_error_log true
       key_name log
@@ -398,7 +401,6 @@ data:
       num_threads 2
     </match>
 metadata:
-  name: fluentd-gcp-config-v1.2.3
-  namespace: kube-system
+  name: fluentd-souvla-config-v1.2.3
   labels:
     addonmanager.kubernetes.io/mode: Reconcile
