@@ -28,7 +28,7 @@ spec:
       dnsPolicy: Default
       containers:
       - name: fluentd-gcp
-        image: gcr.io/google-containers/fluentd-gcp:2.0.14
+        image: k8s.gcr.io/fluentd-gcp:2.0.14
         env:
         - name: FLUENTD_ARGS
           value: --no-supervisor -q

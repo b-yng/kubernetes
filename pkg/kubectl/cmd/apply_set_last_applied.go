@@ -107,7 +107,7 @@ func NewCmdApplySetLastApplied(f cmdutil.Factory, out, err io.Writer) *cobra.Com
 }
 
 func (o *SetLastAppliedOptions) Complete(f cmdutil.Factory, cmd *cobra.Command) error {
-	o.DryRun = cmdutil.GetFlagBool(cmd, "dry-run")
+	o.DryRun = cmdutil.GetDryRunFlag(cmd)
 	o.Output = cmdutil.GetFlagString(cmd, "output")
 	o.ShortOutput = o.Output == "name"
 	o.Codec = f.JSONEncoder()
@@ -188,14 +188,14 @@ func (o *SetLastAppliedOptions) RunSetLastApplied(f cmdutil.Factory, cmd *cobra.
 				info.Refresh(patchedObj, false)
 				return f.PrintResourceInfoForCommand(cmd, info, o.Out)
 			}
-			f.PrintSuccess(o.Mapper, o.ShortOutput, o.Out, info.Mapping.Resource, info.Name, o.DryRun, "configured")
+			f.PrintSuccess(o.ShortOutput, o.Out, info.Mapping.Resource, info.Name, o.DryRun, "configured")
 
 		} else {
 			err := o.formatPrinter(o.Output, patch.Patch, o.Out)
 			if err != nil {
 				return err
 			}
-			f.PrintSuccess(o.Mapper, o.ShortOutput, o.Out, info.Mapping.Resource, info.Name, o.DryRun, "configured")
+			f.PrintSuccess(o.ShortOutput, o.Out, info.Mapping.Resource, info.Name, o.DryRun, "configured")
 		}
 	}
 	return nil

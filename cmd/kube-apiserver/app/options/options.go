@@ -51,7 +51,7 @@ type ServerRunOptions struct {
 	Authorization           *kubeoptions.BuiltInAuthorizationOptions
 	CloudProvider           *kubeoptions.CloudProviderOptions
 	StorageSerialization    *kubeoptions.StorageSerializationOptions
-	APIEnablement           *kubeoptions.APIEnablementOptions
+	APIEnablement           *genericoptions.APIEnablementOptions
 
 	AllowPrivileged           bool
 	EnableLogsHandler         bool
@@ -87,7 +87,7 @@ func NewServerRunOptions() *ServerRunOptions {
 		Authorization:        kubeoptions.NewBuiltInAuthorizationOptions(),
 		CloudProvider:        kubeoptions.NewCloudProviderOptions(),
 		StorageSerialization: kubeoptions.NewStorageSerializationOptions(),
-		APIEnablement:        kubeoptions.NewAPIEnablementOptions(),
+		APIEnablement:        genericoptions.NewAPIEnablementOptions(),
 
 		EnableLogsHandler:      true,
 		EventTTL:               1 * time.Hour,
@@ -125,7 +125,6 @@ func (s *ServerRunOptions) AddFlags(fs *pflag.FlagSet) {
 	s.GenericServerRunOptions.AddUniversalFlags(fs)
 	s.Etcd.AddFlags(fs)
 	s.SecureServing.AddFlags(fs)
-	s.SecureServing.AddDeprecatedFlags(fs)
 	s.InsecureServing.AddFlags(fs)
 	s.InsecureServing.AddDeprecatedFlags(fs)
 	s.Audit.AddFlags(fs)

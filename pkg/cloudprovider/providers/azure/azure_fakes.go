@@ -66,7 +66,7 @@ func (fLBC *fakeAzureLBClient) CreateOrUpdate(resourceGroupName string, loadBala
 		for idx, config := range *parameters.FrontendIPConfigurations {
 			if config.PrivateIPAllocationMethod == network.Dynamic {
 				// Here we randomly assign an ip as private ip
-				// It dosen't smart enough to know whether it is in the subnet's range
+				// It doesn't smart enough to know whether it is in the subnet's range
 				(*parameters.FrontendIPConfigurations)[idx].PrivateIPAddress = getRandomIPPtr()
 			}
 		}
@@ -927,9 +927,27 @@ func (fRTC *fakeRouteTablesClient) Get(resourceGroupName string, routeTableName 
 	}
 }
 
+type fakeFileClient struct {
+}
+
+func (fFC *fakeFileClient) createFileShare(accountName, accountKey, name string, sizeGiB int) error {
+	return nil
+}
+
+func (fFC *fakeFileClient) deleteFileShare(accountName, accountKey, name string) error {
+	return nil
+}
+
+func (fFC *fakeFileClient) resizeFileShare(accountName, accountKey, name string, sizeGiB int) error {
+	return nil
+}
+
 type fakeStorageAccountClient struct {
 	mutex     *sync.Mutex
 	FakeStore map[string]map[string]storage.Account
+	Keys      storage.AccountListKeysResult
+	Accounts  storage.AccountListResult
+	Err       error
 }
 
 func newFakeStorageAccountClient() *fakeStorageAccountClient {
@@ -999,11 +1017,11 @@ func (fSAC *fakeStorageAccountClient) Delete(resourceGroupName string, accountNa
 }
 
 func (fSAC *fakeStorageAccountClient) ListKeys(resourceGroupName string, accountName string) (result storage.AccountListKeysResult, err error) {
-	return storage.AccountListKeysResult{}, nil
+	return fSAC.Keys, fSAC.Err
 }
 
 func (fSAC *fakeStorageAccountClient) ListByResourceGroup(resourceGroupName string) (result storage.AccountListResult, err error) {
-	return storage.AccountListResult{}, nil
+	return fSAC.Accounts, fSAC.Err
 }
 
 func (fSAC *fakeStorageAccountClient) GetProperties(resourceGroupName string, accountName string) (result storage.Account, err error) {

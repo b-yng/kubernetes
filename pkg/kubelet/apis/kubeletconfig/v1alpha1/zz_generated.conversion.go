@@ -141,7 +141,9 @@ func Convert_kubeletconfig_KubeletAuthorization_To_v1alpha1_KubeletAuthorization
 }
 
 func autoConvert_v1alpha1_KubeletConfiguration_To_kubeletconfig_KubeletConfiguration(in *KubeletConfiguration, out *kubeletconfig.KubeletConfiguration, s conversion.Scope) error {
-	out.ConfigTrialDuration = (*v1.Duration)(unsafe.Pointer(in.ConfigTrialDuration))
+	if err := v1.Convert_Pointer_v1_Duration_To_v1_Duration(&in.ConfigTrialDuration, &out.ConfigTrialDuration, s); err != nil {
+		return err
+	}
 	out.PodManifestPath = in.PodManifestPath
 	out.SyncFrequency = in.SyncFrequency
 	out.FileCheckFrequency = in.FileCheckFrequency
@@ -159,6 +161,7 @@ func autoConvert_v1alpha1_KubeletConfiguration_To_kubeletconfig_KubeletConfigura
 	out.TLSCertFile = in.TLSCertFile
 	out.TLSPrivateKeyFile = in.TLSPrivateKeyFile
 	out.TLSCipherSuites = *(*[]string)(unsafe.Pointer(&in.TLSCipherSuites))
+	out.TLSMinVersion = in.TLSMinVersion
 	if err := Convert_v1alpha1_KubeletAuthentication_To_kubeletconfig_KubeletAuthentication(&in.Authentication, &out.Authentication, s); err != nil {
 		return err
 	}
@@ -177,9 +180,6 @@ func autoConvert_v1alpha1_KubeletConfiguration_To_kubeletconfig_KubeletConfigura
 		return err
 	}
 	out.EnableContentionProfiling = in.EnableContentionProfiling
-	if err := v1.Convert_Pointer_int32_To_int32(&in.CAdvisorPort, &out.CAdvisorPort, s); err != nil {
-		return err
-	}
 	if err := v1.Convert_Pointer_int32_To_int32(&in.HealthzPort, &out.HealthzPort, s); err != nil {
 		return err
 	}
@@ -212,6 +212,9 @@ func autoConvert_v1alpha1_KubeletConfiguration_To_kubeletconfig_KubeletConfigura
 	out.HairpinMode = in.HairpinMode
 	out.MaxPods = in.MaxPods
 	out.PodCIDR = in.PodCIDR
+	if err := v1.Convert_Pointer_int64_To_int64(&in.PodPidsLimit, &out.PodPidsLimit, s); err != nil {
+		return err
+	}
 	out.ResolverConfig = in.ResolverConfig
 	if err := v1.Convert_Pointer_bool_To_bool(&in.CPUCFSQuota, &out.CPUCFSQuota, s); err != nil {
 		return err
@@ -263,7 +266,9 @@ func Convert_v1alpha1_KubeletConfiguration_To_kubeletconfig_KubeletConfiguration
 }
 
 func autoConvert_kubeletconfig_KubeletConfiguration_To_v1alpha1_KubeletConfiguration(in *kubeletconfig.KubeletConfiguration, out *KubeletConfiguration, s conversion.Scope) error {
-	out.ConfigTrialDuration = (*v1.Duration)(unsafe.Pointer(in.ConfigTrialDuration))
+	if err := v1.Convert_v1_Duration_To_Pointer_v1_Duration(&in.ConfigTrialDuration, &out.ConfigTrialDuration, s); err != nil {
+		return err
+	}
 	out.PodManifestPath = in.PodManifestPath
 	out.SyncFrequency = in.SyncFrequency
 	out.FileCheckFrequency = in.FileCheckFrequency
@@ -281,6 +286,7 @@ func autoConvert_kubeletconfig_KubeletConfiguration_To_v1alpha1_KubeletConfigura
 	out.TLSCertFile = in.TLSCertFile
 	out.TLSPrivateKeyFile = in.TLSPrivateKeyFile
 	out.TLSCipherSuites = *(*[]string)(unsafe.Pointer(&in.TLSCipherSuites))
+	out.TLSMinVersion = in.TLSMinVersion
 	if err := Convert_kubeletconfig_KubeletAuthentication_To_v1alpha1_KubeletAuthentication(&in.Authentication, &out.Authentication, s); err != nil {
 		return err
 	}
@@ -299,9 +305,6 @@ func autoConvert_kubeletconfig_KubeletConfiguration_To_v1alpha1_KubeletConfigura
 		return err
 	}
 	out.EnableContentionProfiling = in.EnableContentionProfiling
-	if err := v1.Convert_int32_To_Pointer_int32(&in.CAdvisorPort, &out.CAdvisorPort, s); err != nil {
-		return err
-	}
 	if err := v1.Convert_int32_To_Pointer_int32(&in.HealthzPort, &out.HealthzPort, s); err != nil {
 		return err
 	}
@@ -334,6 +337,9 @@ func autoConvert_kubeletconfig_KubeletConfiguration_To_v1alpha1_KubeletConfigura
 	out.HairpinMode = in.HairpinMode
 	out.MaxPods = in.MaxPods
 	out.PodCIDR = in.PodCIDR
+	if err := v1.Convert_int64_To_Pointer_int64(&in.PodPidsLimit, &out.PodPidsLimit, s); err != nil {
+		return err
+	}
 	out.ResolverConfig = in.ResolverConfig
 	if err := v1.Convert_bool_To_Pointer_bool(&in.CPUCFSQuota, &out.CPUCFSQuota, s); err != nil {
 		return err

@@ -88,7 +88,6 @@ pkg/cloudprovider/providers/aws
 pkg/cloudprovider/providers/fake
 pkg/cloudprovider/providers/gce
 pkg/cloudprovider/providers/gce/cloud
-pkg/cloudprovider/providers/openstack
 pkg/cloudprovider/providers/ovirt
 pkg/cloudprovider/providers/photon
 pkg/cloudprovider/providers/vsphere
@@ -161,8 +160,8 @@ pkg/kubectl/util/crlf
 pkg/kubectl/util/slice
 pkg/kubelet
 pkg/kubelet/apis
+pkg/kubelet/apis/cri/runtime/v1alpha2
 pkg/kubelet/apis/cri/testing
-pkg/kubelet/apis/cri/v1alpha1/runtime
 pkg/kubelet/apis/deviceplugin/v1alpha
 pkg/kubelet/apis/kubeletconfig
 pkg/kubelet/apis/kubeletconfig/v1alpha1
@@ -178,7 +177,6 @@ pkg/kubelet/custommetrics
 pkg/kubelet/dockershim
 pkg/kubelet/dockershim/cm
 pkg/kubelet/dockershim/libdocker
-pkg/kubelet/dockershim/remote
 pkg/kubelet/dockershim/testing
 pkg/kubelet/events
 pkg/kubelet/gpu
@@ -205,7 +203,6 @@ pkg/kubelet/prober/testing
 pkg/kubelet/qos
 pkg/kubelet/remote
 pkg/kubelet/rkt
-pkg/kubelet/rktshim
 pkg/kubelet/secret
 pkg/kubelet/server
 pkg/kubelet/server/portforward
@@ -244,6 +241,12 @@ pkg/registry/admissionregistration/initializerconfiguration/storage
 pkg/registry/admissionregistration/mutatingwebhookconfiguration/storage
 pkg/registry/admissionregistration/rest
 pkg/registry/admissionregistration/validatingwebhookconfiguration/storage
+pkg/registry/apps/daemonset
+pkg/registry/apps/daemonset/storage
+pkg/registry/apps/deployment
+pkg/registry/apps/deployment/storage
+pkg/registry/apps/replicaset
+pkg/registry/apps/replicaset/storage
 pkg/registry/apps/rest
 pkg/registry/apps/statefulset
 pkg/registry/apps/statefulset/storage
@@ -297,14 +300,8 @@ pkg/registry/core/service/storage
 pkg/registry/core/serviceaccount/storage
 pkg/registry/events/rest
 pkg/registry/extensions/controller/storage
-pkg/registry/extensions/daemonset
-pkg/registry/extensions/daemonset/storage
-pkg/registry/extensions/deployment
-pkg/registry/extensions/deployment/storage
 pkg/registry/extensions/ingress
 pkg/registry/extensions/ingress/storage
-pkg/registry/extensions/replicaset
-pkg/registry/extensions/replicaset/storage
 pkg/registry/extensions/rest
 pkg/registry/networking/networkpolicy/storage
 pkg/registry/networking/rest
@@ -332,19 +329,8 @@ pkg/registry/storage/rest
 pkg/registry/storage/storageclass
 pkg/registry/storage/storageclass/storage
 pkg/routes
-pkg/scheduler/algorithm
-pkg/scheduler/algorithm/predicates
-pkg/scheduler/algorithm/priorities
-pkg/scheduler/algorithm/priorities/util
 pkg/scheduler/api
-pkg/scheduler/api/latest
 pkg/scheduler/api/v1
-pkg/scheduler/core
-pkg/scheduler/factory
-pkg/scheduler/metrics
-pkg/scheduler/schedulercache
-pkg/scheduler/testing
-pkg/scheduler/util
 pkg/security/apparmor
 pkg/security/podsecuritypolicy
 pkg/security/podsecuritypolicy/group
@@ -393,7 +379,6 @@ pkg/volume/aws_ebs
 pkg/volume/azure_dd
 pkg/volume/azure_file
 pkg/volume/cephfs
-pkg/volume/cinder
 pkg/volume/configmap
 pkg/volume/empty_dir
 pkg/volume/fc
@@ -506,7 +491,7 @@ staging/src/k8s.io/apimachinery/pkg/apis/meta/fuzzer
 staging/src/k8s.io/apimachinery/pkg/apis/meta/internalversion
 staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/unstructured
 staging/src/k8s.io/apimachinery/pkg/apis/meta/v1/validation
-staging/src/k8s.io/apimachinery/pkg/apis/meta/v1alpha1
+staging/src/k8s.io/apimachinery/pkg/apis/meta/v1beta1
 staging/src/k8s.io/apimachinery/pkg/apis/testapigroup
 staging/src/k8s.io/apimachinery/pkg/apis/testapigroup/v1
 staging/src/k8s.io/apimachinery/pkg/conversion
@@ -609,6 +594,7 @@ staging/src/k8s.io/apiserver/pkg/storage/storagebackend
 staging/src/k8s.io/apiserver/pkg/storage/testing
 staging/src/k8s.io/apiserver/pkg/storage/tests
 staging/src/k8s.io/apiserver/pkg/storage/value
+staging/src/k8s.io/apiserver/pkg/storage/value/encrypt/envelope/v1beta1
 staging/src/k8s.io/apiserver/pkg/util/feature
 staging/src/k8s.io/apiserver/pkg/util/flag
 staging/src/k8s.io/apiserver/pkg/util/proxy
@@ -729,6 +715,7 @@ staging/src/k8s.io/code-generator/cmd/conversion-gen/generators
 staging/src/k8s.io/code-generator/cmd/go-to-protobuf/protobuf
 staging/src/k8s.io/code-generator/cmd/lister-gen/generators
 staging/src/k8s.io/kube-aggregator/pkg/apis/apiregistration
+staging/src/k8s.io/kube-aggregator/pkg/apis/apiregistration/v1
 staging/src/k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1
 staging/src/k8s.io/kube-aggregator/pkg/apis/apiregistration/validation
 staging/src/k8s.io/kube-aggregator/pkg/apiserver
@@ -788,7 +775,6 @@ test/e2e/instrumentation/monitoring
 test/e2e/kubectl
 test/e2e/lifecycle
 test/e2e/lifecycle/bootstrap
-test/e2e/multicluster
 test/e2e/network
 test/e2e/node
 test/e2e/scalability

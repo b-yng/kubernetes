@@ -76,7 +76,7 @@ type Config struct {
 	// the cloudprovider will try to add all nodes to a single backend pool which is forbidden.
 	// In other words, if you use multiple agent pools (availability sets), you MUST set this field.
 	PrimaryAvailabilitySetName string `json:"primaryAvailabilitySetName" yaml:"primaryAvailabilitySetName"`
-	// The type of azure nodes. Candidate valudes are: vmss and standard.
+	// The type of azure nodes. Candidate values are: vmss and standard.
 	// If not set, it will be default to standard.
 	VMType string `json:"vmType" yaml:"vmType"`
 	// The name of the scale set that should be used as the load balancer backend.
@@ -102,6 +102,12 @@ type Config struct {
 	// Rate limit Bucket Size
 	CloudProviderRateLimitBucket int `json:"cloudProviderRateLimitBucket" yaml:"cloudProviderRateLimitBucket"`
 
+	// Use instance metadata service where possible
+	UseInstanceMetadata bool `json:"useInstanceMetadata" yaml:"useInstanceMetadata"`
+
+	// Use managed service identity for the virtual machine to access Azure ARM APIs
+	UseManagedIdentityExtension bool `json:"useManagedIdentityExtension"`
+
 	// Maximum allowed LoadBalancer Rule Count is the limit enforced by Azure Load balancer
 	MaximumLoadBalancerRuleCount int `json:"maximumLoadBalancerRuleCount"`
 }
@@ -120,7 +126,9 @@ type Cloud struct {
 	VirtualMachinesClient   VirtualMachinesClient
 	StorageAccountClient    StorageAccountClient
 	DisksClient             DisksClient
+	FileClient              FileClient
 	resourceRequestBackoff  wait.Backoff
+	metadata                *InstanceMetadata
 	vmSet                   VMSet
 
 	// Clients for vmss.
@@ -193,6 +201,7 @@ func NewCloud(configReader io.Reader) (cloudprovider.Interface, error) {
 		PublicIPAddressesClient:         newAzPublicIPAddressesClient(azClientConfig),
 		VirtualMachineScaleSetsClient:   newAzVirtualMachineScaleSetsClient(azClientConfig),
 		VirtualMachineScaleSetVMsClient: newAzVirtualMachineScaleSetVMsClient(azClientConfig),
+		FileClient:                      &azureFileClient{env: *env},
 	}
 
 	// Conditionally configure resource request backoff
@@ -222,6 +231,8 @@ func NewCloud(configReader io.Reader) (cloudprovider.Interface, error) {
 			az.CloudProviderBackoffDuration,
 			az.CloudProviderBackoffJitter)
 	}
+
+	az.metadata = NewInstanceMetadata()
 
 	if az.MaximumLoadBalancerRuleCount == 0 {
 		az.MaximumLoadBalancerRuleCount = maximumLoadBalancerRuleCount
@@ -311,14 +322,9 @@ func initDiskControllers(az *Cloud) error {
 	// needed by both blob disk and managed disk controllers
 
 	common := &controllerCommon{
-		aadResourceEndPoint:   az.Environment.ServiceManagementEndpoint,
-		clientID:              az.AADClientID,
-		clientSecret:          az.AADClientSecret,
 		location:              az.Location,
 		storageEndpointSuffix: az.Environment.StorageEndpointSuffix,
-		managementEndpoint:    az.Environment.ResourceManagerEndpoint,
 		resourceGroup:         az.ResourceGroup,
-		tokenEndPoint:         az.Environment.ActiveDirectoryEndpoint,
 		subscriptionID:        az.SubscriptionID,
 		cloud:                 az,
 	}

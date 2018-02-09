@@ -57,6 +57,7 @@ import (
 	genericfilters "k8s.io/apiserver/pkg/server/filters"
 	"k8s.io/apiserver/pkg/server/healthz"
 	"k8s.io/apiserver/pkg/server/routes"
+	serverstore "k8s.io/apiserver/pkg/server/storage"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/informers"
 	restclient "k8s.io/client-go/rest"
@@ -175,6 +176,11 @@ type Config struct {
 	// if the client requests it via Accept-Encoding
 	EnableAPIResponseCompression bool
 
+	// MergedResourceConfig indicates which groupVersion enabled and its resources enabled/disabled.
+	// This is composed of genericapiserver defaultAPIResourceConfig and those parsed from flags.
+	// If not specify any in flags, then genericapiserver will only enable defaultAPIResourceConfig.
+	MergedResourceConfig *serverstore.ResourceConfig
+
 	//===========================================================================
 	// values below here are targets for removal
 	//===========================================================================
@@ -209,10 +215,6 @@ type SecureServingInfo struct {
 	// Cert is the main server cert which is used if SNI does not match. Cert must be non-nil and is
 	// allowed to be in SNICerts.
 	Cert *tls.Certificate
-
-	// CACert is an optional certificate authority used for the loopback connection of the Admission controllers.
-	// If this is nil, the certificate authority is extracted from Cert or a matching SNI certificate.
-	CACert *tls.Certificate
 
 	// SNICerts are the TLS certificates by name used for SNI.
 	SNICerts map[string]*tls.Certificate

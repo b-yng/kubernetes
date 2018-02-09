@@ -48,6 +48,7 @@ import (
 	"k8s.io/kubernetes/pkg/kubectl/resource"
 	"k8s.io/kubernetes/pkg/kubectl/validation"
 	"k8s.io/kubernetes/pkg/printers"
+	metricsclientset "k8s.io/metrics/pkg/client/clientset_generated/clientset"
 )
 
 const (
@@ -94,6 +95,9 @@ type ClientAccessFactory interface {
 
 	// KubernetesClientSet gives you back an external clientset
 	KubernetesClientSet() (*kubernetes.Clientset, error)
+
+	// MetricsClientSet gives you back an external clientset for the metrics API
+	MetricsClientSet() (metricsclientset.Interface, error)
 
 	// Returns a RESTClient for accessing Kubernetes resources or an error.
 	RESTClient() (*restclient.RESTClient, error)
@@ -244,7 +248,7 @@ type BuilderFactory interface {
 	// Requires that printer flags have been added to cmd (see AddPrinterFlags).
 	PrintResourceInfoForCommand(cmd *cobra.Command, info *resource.Info, out io.Writer) error
 	// PrintSuccess prints message after finishing mutating operations
-	PrintSuccess(mapper meta.RESTMapper, shortOutput bool, out io.Writer, resource, name string, dryRun bool, operation string)
+	PrintSuccess(shortOutput bool, out io.Writer, resource, name string, dryRun bool, operation string)
 	// NewBuilder returns an object that assists in loading objects from both disk and the server
 	// and which implements the common patterns for CLI interactions with generic resources.
 	NewBuilder() *resource.Builder

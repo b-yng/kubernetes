@@ -143,7 +143,11 @@ func (plugin *glusterfsPlugin) GetAccessModes() []v1.PersistentVolumeAccessMode 
 }
 
 func (plugin *glusterfsPlugin) NewMounter(spec *volume.Spec, pod *v1.Pod, _ volume.VolumeOptions) (volume.Mounter, error) {
-	source, _ := plugin.getGlusterVolumeSource(spec)
+	source, _, err := getVolumeSource(spec)
+	if err != nil {
+		glog.Errorf("failed to get gluster volumesource: %v", err)
+		return nil, err
+	}
 	epName := source.EndpointsName
 	// PVC/POD is in same ns.
 	podNs := pod.Namespace
@@ -160,17 +164,8 @@ func (plugin *glusterfsPlugin) NewMounter(spec *volume.Spec, pod *v1.Pod, _ volu
 	return plugin.newMounterInternal(spec, ep, pod, plugin.host.GetMounter(plugin.GetPluginName()))
 }
 
-func (plugin *glusterfsPlugin) getGlusterVolumeSource(spec *volume.Spec) (*v1.GlusterfsVolumeSource, bool) {
-	// Glusterfs volumes used directly in a pod have a ReadOnly flag set by the pod author.
-	// Glusterfs volumes used as a PersistentVolume gets the ReadOnly flag indirectly through the persistent-claim volume used to mount the PV
-	if spec.Volume != nil && spec.Volume.Glusterfs != nil {
-		return spec.Volume.Glusterfs, spec.Volume.Glusterfs.ReadOnly
-	}
-	return spec.PersistentVolume.Spec.Glusterfs, spec.ReadOnly
-}
-
 func (plugin *glusterfsPlugin) newMounterInternal(spec *volume.Spec, ep *v1.Endpoints, pod *v1.Pod, mounter mount.Interface) (volume.Mounter, error) {
-	source, readOnly := plugin.getGlusterVolumeSource(spec)
+	source, readOnly, _ := getVolumeSource(spec)
 	return &glusterfsMounter{
 		glusterfs: &glusterfs{
 			volName:         spec.Name(),
@@ -379,8 +374,7 @@ func (b *glusterfsMounter) setUpAtInternal(dir string) error {
 
 }
 
-func getVolumeSource(
-	spec *volume.Spec) (*v1.GlusterfsVolumeSource, bool, error) {
+func getVolumeSource(spec *volume.Spec) (*v1.GlusterfsVolumeSource, bool, error) {
 	if spec.Volume != nil && spec.Volume.Glusterfs != nil {
 		return spec.Volume.Glusterfs, spec.Volume.Glusterfs.ReadOnly, nil
 	} else if spec.PersistentVolume != nil &&
@@ -620,7 +614,7 @@ func (d *glusterfsVolumeDeleter) Delete() error {
 	}
 	d.provisionerConfig = *cfg
 
-	glog.V(4).Infof("deleting volume %q with configuration %+v", volumeID, d.provisionerConfig)
+	glog.V(4).Infof("deleting volume %q", volumeID)
 
 	gid, exists, err := d.getGid()
 	if err != nil {
@@ -669,7 +663,7 @@ func (d *glusterfsVolumeDeleter) Delete() error {
 	if err != nil {
 		glog.Errorf("error when deleting endpoint/service :%v", err)
 	} else {
-		glog.V(1).Infof("endpoint: %v and service: %v deleted successfully ", dynamicNamespace, dynamicEndpoint)
+		glog.V(1).Infof("endpoint: [%v/%v] is deleted successfully ", dynamicNamespace, dynamicEndpoint)
 	}
 	return nil
 }
@@ -749,7 +743,7 @@ func (p *glusterfsVolumeProvisioner) CreateVolume(gid int) (r *v1.GlusterfsVolum
 	capacity := p.options.PVC.Spec.Resources.Requests[v1.ResourceName(v1.ResourceStorage)]
 	// Glusterfs creates volumes in units of GiB, but heketi documentation incorrectly reports GBs
 	sz := int(volume.RoundUpToGiB(capacity))
-	glog.V(2).Infof("create volume of size: %d GiB and configuration %+v", sz, p.provisionerConfig)
+	glog.V(2).Infof("create volume of size: %d GiB", sz)
 	if p.url == "" {
 		glog.Errorf("REST server endpoint is empty")
 		return nil, 0, "", fmt.Errorf("failed to create glusterfs REST client, REST URL is empty")
@@ -765,7 +759,7 @@ func (p *glusterfsVolumeProvisioner) CreateVolume(gid int) (r *v1.GlusterfsVolum
 	}
 
 	if p.provisionerConfig.volumeNamePrefix != "" {
-		customVolumeName = fmt.Sprintf("%s_%s_%s", p.provisionerConfig.volumeNamePrefix, p.options.PVC.Name, uuid.NewUUID())
+		customVolumeName = fmt.Sprintf("%s_%s_%s_%s", p.provisionerConfig.volumeNamePrefix, p.options.PVC.Namespace, p.options.PVC.Name, uuid.NewUUID())
 	}
 
 	gid64 := int64(gid)
@@ -1085,8 +1079,8 @@ func getVolumeID(pv *v1.PersistentVolume, volumeName string) (string, error) {
 
 	// Get volID from pvspec if available, else fill it from volumename.
 	if pv != nil {
-		if pv.Annotations["VolID"] != "" {
-			volumeID = pv.Annotations["VolID"]
+		if pv.Annotations[heketiVolIDAnn] != "" {
+			volumeID = pv.Annotations[heketiVolIDAnn]
 		} else {
 			volumeID = dstrings.TrimPrefix(volumeName, volPrefix)
 		}
@@ -1131,6 +1125,21 @@ func (plugin *glusterfsPlugin) ExpandVolumeDevice(spec *volume.Spec, newSize res
 	// Find out delta size
 	expansionSize := (newSize.Value() - oldSize.Value())
 	expansionSizeGiB := int(volume.RoundUpSize(expansionSize, volume.GIB))
+
+	// Find out requested Size
+
+	requestGiB := volume.RoundUpToGiB(newSize)
+
+	//Check the existing volume size
+	currentVolumeInfo, err := cli.VolumeInfo(volumeID)
+	if err != nil {
+		glog.Errorf("error when fetching details of volume :%v", err)
+		return oldSize, err
+	}
+
+	if int64(currentVolumeInfo.Size) >= requestGiB {
+		return newSize, nil
+	}
 
 	// Make volume expansion request
 	volumeExpandReq := &gapi.VolumeExpandRequest{Size: expansionSizeGiB}

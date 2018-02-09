@@ -43,7 +43,7 @@ type UndoOptions struct {
 	ToRevision  int64
 	DryRun      bool
 
-	PrintSuccess func(mapper meta.RESTMapper, shortOutput bool, out io.Writer, resource, name string, dryRun bool, operation string)
+	PrintSuccess func(shortOutput bool, out io.Writer, resource, name string, dryRun bool, operation string)
 	Out          io.Writer
 }
 
@@ -106,7 +106,7 @@ func (o *UndoOptions) CompleteUndo(f cmdutil.Factory, cmd *cobra.Command, out io
 	o.ToRevision = cmdutil.GetFlagInt64(cmd, "to-revision")
 	o.Mapper, o.Typer = f.Object()
 	o.Out = out
-	o.DryRun = cmdutil.GetFlagBool(cmd, "dry-run")
+	o.DryRun = cmdutil.GetDryRunFlag(cmd)
 
 	cmdNamespace, enforceNamespace, err := f.DefaultNamespace()
 	if err != nil {
@@ -150,7 +150,7 @@ func (o *UndoOptions) RunUndo() error {
 			allErrs = append(allErrs, cmdutil.AddSourceToErr("undoing", info.Source, err))
 			continue
 		}
-		o.PrintSuccess(o.Mapper, false, o.Out, info.Mapping.Resource, info.Name, false, result)
+		o.PrintSuccess(false, o.Out, info.Mapping.Resource, info.Name, false, result)
 	}
 	return utilerrors.NewAggregate(allErrs)
 }

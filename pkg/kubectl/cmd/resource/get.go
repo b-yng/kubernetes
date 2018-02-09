@@ -128,19 +128,7 @@ func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 		Out:    out,
 		ErrOut: errOut,
 	}
-
-	// TODO: this needs to be abstracted behind the factory like ValidResourceTypeList
-	//   and use discovery
-	// retrieve a list of handled resources from printer as valid args
-	validArgs, argAliases := []string{}, []string{}
-	p, err := f.Printer(nil, printers.PrintOptions{
-		ColumnLabels: []string{},
-	})
-	cmdutil.CheckErr(err)
-	if p != nil {
-		validArgs = p.HandledResources()
-		argAliases = kubectl.ResourceAliases(validArgs)
-	}
+	validArgs := cmdutil.ValidArgList(f)
 
 	cmd := &cobra.Command{
 		Use: "get [(-o|--output=)json|yaml|wide|custom-columns=...|custom-columns-file=...|go-template=...|go-template-file=...|jsonpath=...|jsonpath-file=...] (TYPE [NAME | -l label] | TYPE/NAME ...) [flags]",
@@ -155,7 +143,7 @@ func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 		},
 		SuggestFor: []string{"list", "ps"},
 		ValidArgs:  validArgs,
-		ArgAliases: argAliases,
+		ArgAliases: kubectl.ResourceAliases(validArgs),
 	}
 
 	cmd.Flags().StringVar(&options.Raw, "raw", options.Raw, "Raw URI to request from the server.  Uses the transport specified by the kubeconfig file.")
@@ -414,7 +402,7 @@ func (options *GetOptions) Run(f cmdutil.Factory, cmd *cobra.Command, args []str
 		}
 		objToPrint := typedObj
 		if printer.IsGeneric() {
-			// use raw object as recieved from the builder when using generic
+			// use raw object as received from the builder when using generic
 			// printer instead of decodedObj
 			objToPrint = original
 		}
@@ -585,7 +573,6 @@ func (options *GetOptions) printGeneric(printer printers.ResourcePrinter, r *res
 
 	var obj runtime.Object
 	if !singleItemImplied || len(infos) > 1 {
-		// we have more than one item, so coerce all items into a list
 		// we have more than one item, so coerce all items into a list.
 		// we don't want an *unstructured.Unstructured list yet, as we
 		// may be dealing with non-unstructured objects. Compose all items

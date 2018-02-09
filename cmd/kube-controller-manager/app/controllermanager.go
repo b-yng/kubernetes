@@ -63,6 +63,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/kubernetes/pkg/version/verflag"
 )
 
@@ -181,6 +182,8 @@ func Run(s *options.CMServer) error {
 	if err != nil {
 		return err
 	}
+	// add a uniquifier so that two processes on the same host don't accidentally both become active
+	id = id + "_" + string(uuid.NewUUID())
 
 	rl, err := resourcelock.New(s.LeaderElection.ResourceLock,
 		"kube-system",
@@ -381,6 +384,7 @@ func NewControllerInitializers(loopMode ControllerLoopMode) map[string]InitFunc 
 	controllers["persistentvolume-expander"] = startVolumeExpandController
 	controllers["clusterrole-aggregation"] = startClusterRoleAggregrationController
 	controllers["pvc-protection"] = startPVCProtectionController
+	controllers["pv-protection"] = startPVProtectionController
 
 	return controllers
 }
@@ -451,31 +455,10 @@ func CreateControllerContext(s *options.CMServer, rootClientBuilder, clientBuild
 		return ControllerContext{}, err
 	}
 
-	var cloud cloudprovider.Interface
-	var loopMode ControllerLoopMode
-	if cloudprovider.IsExternal(s.CloudProvider) {
-		loopMode = ExternalLoops
-		if s.ExternalCloudVolumePlugin != "" {
-			cloud, err = cloudprovider.InitCloudProvider(s.ExternalCloudVolumePlugin, s.CloudConfigFile)
-		}
-	} else {
-		loopMode = IncludeCloudLoops
-		cloud, err = cloudprovider.InitCloudProvider(s.CloudProvider, s.CloudConfigFile)
-	}
+	cloud, loopMode, err := createCloudProvider(s.CloudProvider, s.ExternalCloudVolumePlugin,
+		s.CloudConfigFile, s.AllowUntaggedCloud, sharedInformers)
 	if err != nil {
-		return ControllerContext{}, fmt.Errorf("cloud provider could not be initialized: %v", err)
-	}
-
-	if cloud != nil && cloud.HasClusterID() == false {
-		if s.AllowUntaggedCloud == true {
-			glog.Warning("detected a cluster without a ClusterID.  A ClusterID will be required in the future.  Please tag your cluster to avoid any future issues")
-		} else {
-			return ControllerContext{}, fmt.Errorf("no ClusterID Found.  A ClusterID is required for the cloud provider to function properly.  This check can be bypassed by setting the allow-untagged-cloud option")
-		}
-	}
-
-	if informerUserCloud, ok := cloud.(cloudprovider.InformerUser); ok {
-		informerUserCloud.SetInformers(sharedInformers)
+		return ControllerContext{}, err
 	}
 
 	ctx := ControllerContext{
@@ -568,7 +551,7 @@ func (c serviceAccountTokenControllerStarter) startServiceAccountTokenController
 		ctx.InformerFactory.Core().V1().Secrets(),
 		c.rootClientBuilder.ClientOrDie("tokens-controller"),
 		serviceaccountcontroller.TokensControllerOptions{
-			TokenGenerator: serviceaccount.JWTTokenGenerator(privateKey),
+			TokenGenerator: serviceaccount.JWTTokenGenerator(serviceaccount.LegacyIssuer, privateKey),
 			RootCA:         rootCA,
 		},
 	)

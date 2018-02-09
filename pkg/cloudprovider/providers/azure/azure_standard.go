@@ -45,9 +45,7 @@ const (
 	availabilitySetIDTemplate   = "/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Compute/availabilitySets/%s"
 	frontendIPConfigIDTemplate  = "/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network/loadBalancers/%s/frontendIPConfigurations/%s"
 	backendPoolIDTemplate       = "/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network/loadBalancers/%s/backendAddressPools/%s"
-	loadBalancerRuleIDTemplate  = "/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network/loadBalancers/%s/loadBalancingRules/%s"
 	loadBalancerProbeIDTemplate = "/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network/loadBalancers/%s/probes/%s"
-	securityRuleIDTemplate      = "/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network/networkSecurityGroups/%s/securityRules/%s"
 
 	// InternalLoadBalancerNameSuffix is load balancer posfix
 	InternalLoadBalancerNameSuffix = "-internal"
@@ -97,16 +95,6 @@ func (az *Cloud) getBackendPoolID(lbName, backendPoolName string) string {
 		backendPoolName)
 }
 
-// returns the full identifier of a loadbalancer rule.
-func (az *Cloud) getLoadBalancerRuleID(lbName, lbRuleName string) string {
-	return fmt.Sprintf(
-		loadBalancerRuleIDTemplate,
-		az.SubscriptionID,
-		az.ResourceGroup,
-		lbName,
-		lbRuleName)
-}
-
 // returns the full identifier of a loadbalancer probe.
 func (az *Cloud) getLoadBalancerProbeID(lbName, lbRuleName string) string {
 	return fmt.Sprintf(
@@ -115,25 +103,6 @@ func (az *Cloud) getLoadBalancerProbeID(lbName, lbRuleName string) string {
 		az.ResourceGroup,
 		lbName,
 		lbRuleName)
-}
-
-// returns the full identifier of a network security group security rule.
-func (az *Cloud) getSecurityRuleID(securityRuleName string) string {
-	return fmt.Sprintf(
-		securityRuleIDTemplate,
-		az.SubscriptionID,
-		az.ResourceGroup,
-		az.SecurityGroupName,
-		securityRuleName)
-}
-
-// returns the full identifier of a publicIPAddress.
-func (az *Cloud) getpublicIPAddressID(pipName string) string {
-	return fmt.Sprintf(
-		publicIPAddressIDTemplate,
-		az.SubscriptionID,
-		az.ResourceGroup,
-		pipName)
 }
 
 func (az *Cloud) mapLoadBalancerNameToVMSet(lbName string, clusterName string) (vmSetName string) {
@@ -221,6 +190,10 @@ func getPrimaryInterfaceID(machine compute.VirtualMachine) (string, error) {
 }
 
 func getPrimaryIPConfig(nic network.Interface) (*network.InterfaceIPConfiguration, error) {
+	if nic.IPConfigurations == nil {
+		return nil, fmt.Errorf("nic.IPConfigurations for nic (nicname=%q) is nil", *nic.Name)
+	}
+
 	if len(*nic.IPConfigurations) == 1 {
 		return &((*nic.IPConfigurations)[0]), nil
 	}
@@ -231,7 +204,7 @@ func getPrimaryIPConfig(nic network.Interface) (*network.InterfaceIPConfiguratio
 		}
 	}
 
-	return nil, fmt.Errorf("failed to determine the determine primary ipconfig. nicname=%q", *nic.Name)
+	return nil, fmt.Errorf("failed to determine the primary ipconfig. nicname=%q", *nic.Name)
 }
 
 func isInternalLoadBalancer(lb *network.LoadBalancer) bool {
